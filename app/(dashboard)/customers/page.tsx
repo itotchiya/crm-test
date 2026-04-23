@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Mail, Phone, Building2, X } from "lucide-react";
+import { Plus, Search, MoreHorizontal, Pencil, Trash2, Download, Mail, Phone, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Modal } from "@/components/ui/modal";
+import { createContact, updateContact, deleteContact } from "@/lib/actions";
 import { toast } from "sonner";
 
 interface Customer {
@@ -12,9 +13,10 @@ interface Customer {
   email: string;
   phone: string | null;
   company: string;
-  title: string | null;
   status: string;
-  type: string;
+  revenue: number;
+  lastContact: string | null;
+  avatar: string | null;
   assigned: { name: string } | null;
 }
 
@@ -22,7 +24,6 @@ const statusColors: Record<string, string> = {
   Active: "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800",
   Inactive: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700",
   Prospect: "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800",
-  Churned: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800",
 };
 
 export default function CustomersPage() {
@@ -33,11 +34,17 @@ export default function CustomersPage() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "", company: "", title: "", status: "Active", type: "Lead" });
+  const [submitting, setSubmitting] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "", company: "", status: "Prospect" });
 
-  useEffect(() => {
-    fetch("/api/contacts").then(r => r.json()).then(data => { setCustomers(data); setLoading(false); });
-  }, []);
+  const fetchCustomers = async () => {
+    const res = await fetch("/api/contacts");
+    const data = await res.json();
+    setCustomers(data);
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchCustomers(); }, []);
 
   const filtered = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -45,44 +52,64 @@ export default function CustomersPage() {
     c.company.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newCustomer: Customer = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      company: formData.company,
-      title: formData.title,
-      status: formData.status,
-      type: formData.type,
-      assigned: null,
-    };
-    setCustomers([newCustomer, ...customers]);
-    setIsAddOpen(false);
-    setFormData({ name: "", email: "", phone: "", company: "", title: "", status: "Active", type: "Lead" });
-    toast.success("Customer added!");
+    setSubmitting(true);
+    try {
+      await createContact({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        company: formData.company,
+        status: formData.status,
+      });
+      toast.success("Customer added!");
+      setIsAddOpen(false);
+      setFormData({ name: "", email: "", phone: "", company: "", status: "Prospect" });
+      await fetchCustomers();
+    } catch (err) {
+      toast.error("Failed to add customer");
+    }
+    setSubmitting(false);
   };
 
-  const handleEdit = (e: React.FormEvent) => {
+  const handleEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editId) return;
-    setCustomers(customers.map(c => c.id === editId ? { ...c, ...formData } : c));
-    setIsEditOpen(false);
-    setEditId(null);
-    toast.success("Customer updated!");
+    setSubmitting(true);
+    try {
+      await updateContact(editId, {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone || undefined,
+        company: formData.company,
+        status: formData.status,
+      });
+      toast.success("Customer updated!");
+      setIsEditOpen(false);
+      setEditId(null);
+      await fetchCustomers();
+    } catch (err) {
+      toast.error("Failed to update customer");
+    }
+    setSubmitting(false);
   };
 
-  const handleDelete = (id: string) => {
-    setCustomers(customers.filter(c => c.id !== id));
-    setOpenMenu(null);
-    toast.success("Customer deleted!");
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteContact(id);
+      setOpenMenu(null);
+      toast.success("Customer deleted!");
+      await fetchCustomers();
+    } catch (err) {
+      toast.error("Failed to delete customer");
+    }
   };
 
   const exportCSV = () => {
-    const headers = ["Name", "Email", "Phone", "Company", "Title", "Status", "Type"];
-    const rows = filtered.map(c => [c.name, c.email, c.phone || "", c.company, c.title || "", c.status, c.type]);
-    const csv = [headers, ...rows].map(r => r.map(x => `"${String(x).replace(/"/g, "\\")}"`).join(",")).join("\n");
+    const headers = ["Name", "Email", "Phone", "Company", "Status"];
+    const rows = filtered.map(c => [c.name, c.email, c.phone || "", c.company, c.status]);
+    const csv = [headers, ...rows].map(r => r.map(x => `"${String(x).replace(/"/g, '\\"')}"`).join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -95,7 +122,7 @@ export default function CustomersPage() {
 
   const startEdit = (customer: Customer) => {
     setEditId(customer.id);
-    setFormData({ name: customer.name, email: customer.email, phone: customer.phone || "", company: customer.company, title: customer.title || "", status: customer.status, type: customer.type });
+    setFormData({ name: customer.name, email: customer.email, phone: customer.phone || "", company: customer.company, status: customer.status });
     setIsEditOpen(true);
     setOpenMenu(null);
   };
@@ -136,7 +163,6 @@ export default function CustomersPage() {
                 <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Status</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Contact</th>
                 <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Company</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-slate-500 uppercase">Type</th>
                 <th className="w-10" />
               </tr>
             </thead>
@@ -146,11 +172,11 @@ export default function CustomersPage() {
                   <td className="px-5 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                        {customer.name.split(" ").map(n => n[0]).join("").toUpperCase()}
+                        {customer.avatar || customer.name.split(" ").map(n => n[0]).join("").toUpperCase()}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-slate-900 dark:text-white">{customer.name}</p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{customer.title || "Customer"}</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{customer.assigned?.name || "Unassigned"}</p>
                       </div>
                     </div>
                   </td>
@@ -171,7 +197,6 @@ export default function CustomersPage() {
                       {customer.company}
                     </div>
                   </td>
-                  <td className="px-5 py-4 text-sm text-slate-600 dark:text-slate-300">{customer.type}</td>
                   <td className="px-5 py-4 relative">
                     <button onClick={() => setOpenMenu(openMenu === customer.id ? null : customer.id)} className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
                       <MoreHorizontal className="w-4 h-4" />
@@ -186,7 +211,7 @@ export default function CustomersPage() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={6} className="px-5 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">No customers found.</td></tr>
+                <tr><td colSpan={5} className="px-5 py-12 text-center text-slate-400 dark:text-slate-500 text-sm">No customers found.</td></tr>
               )}
             </tbody>
           </table>
@@ -204,14 +229,10 @@ export default function CustomersPage() {
             <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label><input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" /></div>
             <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Company</label><input required value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label><input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"><option>Lead</option><option>Customer</option><option>Partner</option></select></div>
-          </div>
-          <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"><option>Active</option><option>Inactive</option><option>Prospect</option><option>Churned</option></select></div>
+          <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"><option>Active</option><option>Inactive</option><option>Prospect</option></select></div>
           <div className="flex justify-end gap-3 mt-6">
             <button type="button" onClick={() => setIsAddOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
-            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Add Customer</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">{submitting ? "Saving..." : "Add Customer"}</button>
           </div>
         </form>
       </Modal>
@@ -227,14 +248,10 @@ export default function CustomersPage() {
             <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Phone</label><input value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" /></div>
             <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Company</label><input required value={formData.company} onChange={e => setFormData({...formData, company: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" /></div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Title</label><input value={formData.title} onChange={e => setFormData({...formData, title: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" /></div>
-            <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Type</label><select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"><option>Lead</option><option>Customer</option><option>Partner</option></select></div>
-          </div>
-          <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"><option>Active</option><option>Inactive</option><option>Prospect</option><option>Churned</option></select></div>
+          <div><label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label><select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"><option>Active</option><option>Inactive</option><option>Prospect</option></select></div>
           <div className="flex justify-end gap-3 mt-6">
             <button type="button" onClick={() => setIsEditOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
-            <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700">Save Changes</button>
+            <button type="submit" disabled={submitting} className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">{submitting ? "Saving..." : "Save Changes"}</button>
           </div>
         </form>
       </Modal>
