@@ -26,10 +26,10 @@ export default function RevenueChart({ data }: { data: RevenueMetric[] }) {
   }));
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Revenue Overview</h3>
-        <p className="text-sm text-slate-500">Monthly revenue vs target</p>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Revenue Overview</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Monthly revenue vs target</p>
       </div>
       <div className="h-[300px]">
         <ResponsiveContainer width="100%" height="100%">

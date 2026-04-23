@@ -10,10 +10,10 @@ interface LeadSource {
 
 export default function LeadSources({ data }: { data: LeadSource[] }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Lead Sources</h3>
-        <p className="text-sm text-slate-500">Where your leads come from</p>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Lead Sources</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Where your leads come from</p>
       </div>
       <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
@@ -42,9 +42,9 @@ export default function LeadSources({ data }: { data: LeadSource[] }) {
           <div key={source.name} className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: source.color }} />
-              <span className="text-slate-600">{source.name}</span>
+              <span className="text-slate-600 dark:text-slate-300">{source.name}</span>
             </div>
-            <span className="font-medium text-slate-900">{source.value}</span>
+            <span className="font-medium text-slate-900 dark:text-white">{source.value}</span>
           </div>
         ))}
       </div>

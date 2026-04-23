@@ -28,18 +28,18 @@ export default function KpiCards({ kpis }: { kpis: Kpi[] }) {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {kpis.map((kpi) => {
         const Icon = iconMap[kpi.title] || DollarSign;
-        const colorClass = colorMap[kpi.title] || "bg-slate-50 text-slate-600";
+        const colorClass = colorMap[kpi.title] || "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300";
         const isUp = kpi.trend === "up";
 
         return (
           <div
             key={kpi.title}
-            className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 mb-1">{kpi.title}</p>
-                <p className="text-2xl font-bold text-slate-900">{kpi.value}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">{kpi.title}</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{kpi.value}</p>
               </div>
               <div className={cn("p-2.5 rounded-lg", colorClass)}>
                 <Icon className="w-5 h-5" />
@@ -59,7 +59,7 @@ export default function KpiCards({ kpis }: { kpis: Kpi[] }) {
                 )}
                 {kpi.change}
               </span>
-              <span className="text-xs text-slate-400">{kpi.period}</span>
+              <span className="text-xs text-slate-400 dark:text-slate-500">{kpi.period}</span>
             </div>
           </div>
         );

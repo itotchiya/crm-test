@@ -24,15 +24,15 @@ const colorMap: Record<string, string> = {
   call: "bg-blue-50 text-blue-600",
   email: "bg-amber-50 text-amber-600",
   meeting: "bg-purple-50 text-purple-600",
-  note: "bg-slate-50 text-slate-600",
+  note: "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300",
 };
 
 export default function ActivityFeed({ activities }: { activities: Activity[] }) {
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-base font-semibold text-slate-900">Recent Activity</h3>
-        <p className="text-sm text-slate-500">Latest updates and actions</p>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">Recent Activity</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Latest updates and actions</p>
       </div>
       <div className="space-y-4">
         {activities.map((activity, index) => {
@@ -45,13 +45,13 @@ export default function ActivityFeed({ activities }: { activities: Activity[] })
                   <Icon className="w-4 h-4" />
                 </div>
                 {index !== activities.length - 1 && (
-                  <div className="w-px h-full bg-slate-100 my-1"></div>
+                  <div className="w-px h-full bg-slate-100 dark:bg-slate-800 my-1"></div>
                 )}
               </div>
               <div className="pb-4">
-                <p className="text-sm font-medium text-slate-900">{activity.title}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{activity.description}</p>
-                <p className="text-xs text-slate-400 mt-1">{activity.time}</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{activity.title}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{activity.description}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{activity.time}</p>
               </div>
             </div>
           );

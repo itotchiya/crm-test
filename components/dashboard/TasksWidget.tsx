@@ -16,7 +16,7 @@ interface Task {
 const priorityStyles: Record<string, string> = {
   High: "bg-red-50 text-red-700 border-red-200",
   Medium: "bg-amber-50 text-amber-700 border-amber-200",
-  Low: "bg-slate-50 text-slate-600 border-slate-200",
+  Low: "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700",
 };
 
 export default function TasksWidget({ tasks }: { tasks: Task[] }) {
@@ -30,10 +30,10 @@ export default function TasksWidget({ tasks }: { tasks: Task[] }) {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-base font-semibold text-slate-900">My Tasks</h3>
-        <p className="text-sm text-slate-500">Things to get done</p>
+        <h3 className="text-base font-semibold text-slate-900 dark:text-white">My Tasks</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">Things to get done</p>
       </div>
       <div className="space-y-3">
         {tasks.map((task) => (
@@ -42,8 +42,8 @@ export default function TasksWidget({ tasks }: { tasks: Task[] }) {
             className={cn(
               "flex items-start gap-3 p-3 rounded-lg border transition-all",
               task.completed
-                ? "bg-slate-50 border-slate-100 opacity-60"
-                : "bg-white border-slate-200 hover:border-indigo-200"
+                ? "bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 opacity-60"
+                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-800"
             )}
           >
             <button
@@ -53,14 +53,14 @@ export default function TasksWidget({ tasks }: { tasks: Task[] }) {
               {task.completed ? (
                 <CheckCircle2 className="w-5 h-5 text-emerald-500" />
               ) : (
-                <Circle className="w-5 h-5 text-slate-400 hover:text-indigo-500 transition-colors" />
+                <Circle className="w-5 h-5 text-slate-400 dark:text-slate-500 hover:text-indigo-500 transition-colors" />
               )}
             </button>
             <div className="flex-1 min-w-0">
               <p
                 className={cn(
                   "text-sm font-medium",
-                  task.completed ? "text-slate-500 line-through" : "text-slate-900"
+                  task.completed ? "text-slate-500 dark:text-slate-400 line-through" : "text-slate-900 dark:text-white"
                 )}
               >
                 {task.title}
@@ -74,7 +74,7 @@ export default function TasksWidget({ tasks }: { tasks: Task[] }) {
                 >
                   {task.priority}
                 </span>
-                <span className="flex items-center gap-1 text-xs text-slate-500">
+                <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                   <Clock className="w-3 h-3" />
                   {task.due}
                 </span>
