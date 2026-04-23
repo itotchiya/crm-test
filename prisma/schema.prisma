@@ -1,0 +1,230 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(SALES_REP)
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deals        Deal[]
+  contacts     Contact[]
+  tasks        Task[]
+  activities   Activity[]
+  events       CalendarEvent[]
+  teamMember   TeamMember?
+  preferences  NotificationPreference[]
+}
+
+enum Role {
+  ADMIN
+  SALES_REP
+}
+
+model Contact {
+  id          String        @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  company     String
+  status      ContactStatus @default(Prospect)
+  revenue     Int           @default(0)
+  lastContact DateTime?
+  avatar      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  assignedTo String?
+  assigned   User?    @relation(fields: [assignedTo], references: [id])
+  deals      Deal[]
+  activities Activity[]
+}
+
+enum ContactStatus {
+  Active
+  Inactive
+  Prospect
+}
+
+model Deal {
+  id          String    @id @default(cuid())
+  title       String
+  value       Int
+  probability Int       @default(0)
+  stage       DealStage @default(Lead)
+  daysInStage Int       @default(0)
+  color       String    @default("indigo")
+  avatar      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  contactId  String
+  contact    Contact  @relation(fields: [contactId], references: [id])
+  assignedTo String?
+  assigned   User?    @relation(fields: [assignedTo], references: [id])
+  activities Activity[]
+}
+
+enum DealStage {
+  Lead
+  Qualified
+  Proposal
+  Negotiation
+  Closed_Won
+  Closed_Lost
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  title       String
+  description String?
+  icon        String       @default("FileText")
+  createdAt   DateTime     @default(now())
+
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+  dealId    String?
+  deal      Deal?    @relation(fields: [dealId], references: [id])
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+}
+
+enum ActivityType {
+  deal
+  call
+  email
+  meeting
+  note
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  title     String
+  priority  Priority @default(Medium)
+  due       DateTime?
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedTo String?
+  assigned   User?   @relation(fields: [assignedTo], references: [id])
+}
+
+enum Priority {
+  High
+  Medium
+  Low
+}
+
+model Campaign {
+  id        String         @id @default(cuid())
+  name      String
+  status    CampaignStatus @default(Draft)
+  type      String         @default("Email")
+  sent      Int            @default(0)
+  opened    Int            @default(0)
+  clicked   Int            @default(0)
+  converted Int            @default(0)
+  revenue   Int            @default(0)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime       @default(now())
+}
+
+enum CampaignStatus {
+  Active
+  Completed
+  Draft
+}
+
+model CalendarEvent {
+  id       String    @id @default(cuid())
+  title    String
+  date     DateTime
+  time     String
+  duration String    @default("1h")
+  type     EventType @default(meeting)
+  with     String?
+  company  String?
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+}
+
+enum EventType {
+  demo
+  call
+  meeting
+}
+
+model RevenueMetric {
+  id        String @id @default(cuid())
+  month     String
+  year      Int    @default(2024)
+  revenue   Int
+  target    Int
+  deals     Int    @default(0)
+  customers Int    @default(0)
+}
+
+model TeamMember {
+  id         String  @id @default(cuid())
+  name       String
+  role       String
+  deals      Int     @default(0)
+  revenue    Int     @default(0)
+  conversion Int     @default(0)
+  target     Int     @default(0)
+  avatar     String?
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+}
+
+model LeadSource {
+  id    String @id @default(cuid())
+  name  String @unique
+  value Int    @default(0)
+  color String @default("#4f46e5")
+}
+
+model Integration {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String
+  connected   Boolean @default(false)
+  icon        String
+}
+
+model NotificationPreference {
+  id          String  @id @default(cuid())
+  label       String
+  description String
+  enabled     Boolean @default(true)
+  category    String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, label])
+}
+
+model CompanySettings {
+  id       String  @id @default(cuid())
+  name     String  @default("Nexus Solutions Inc")
+  website  String  @default("https://nexuscrm.io")
+  industry String  @default("Software / SaaS")
+  size     String  @default("50-200 employees")
+  address  String?
+}
