@@ -5,23 +5,20 @@ export async function GET() {
   try {
     const deals = await prisma.deal.findMany({
       include: { contact: true },
-      orderBy: { createdAt: "desc" },
+      orderBy: { updatedAt: "desc" },
     });
-
-    return NextResponse.json(
-      deals.map((deal) => ({
-        id: deal.id,
-        title: deal.title,
-        company: deal.contact.company,
-        contact: deal.contact.name,
-        value: deal.value,
-        probability: deal.probability,
-        daysInStage: deal.daysInStage,
-        avatar: deal.avatar,
-        color: deal.color,
-        stage: deal.stage.replace("_", " "),
-      }))
-    );
+    return NextResponse.json(deals.map(d => ({
+      id: d.id,
+      title: d.title,
+      company: d.contact.company,
+      contact: d.contact.name,
+      value: d.value,
+      probability: d.probability,
+      daysInStage: Math.floor((Date.now() - new Date(d.updatedAt).getTime()) / (1000 * 60 * 60 * 24)),
+      avatar: d.avatar || d.contact.company.split(" ").map((w: string) => w[0]).join("").toUpperCase(),
+      color: d.color || "indigo",
+      stage: d.stage.replace("_", " "),
+    })));
   } catch (error) {
     return NextResponse.json({ error: "Failed to fetch deals" }, { status: 500 });
   }

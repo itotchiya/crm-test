@@ -17,6 +17,7 @@ export async function createContact(data: {
       ...data,
       status: data.status as any,
       avatar: data.name.split(" ").map((n) => n[0]).join("").toUpperCase(),
+      lastContact: new Date(),
     },
   });
   revalidatePath("/customers");
@@ -99,6 +100,20 @@ export async function deleteDeal(id: string) {
   revalidatePath("/dashboard");
 }
 
+export async function moveDealStage(id: string, stage: string) {
+  const deal = await prisma.deal.update({
+    where: { id },
+    data: {
+      stage: stage as any,
+      daysInStage: 0,
+      updatedAt: new Date(),
+    },
+  });
+  revalidatePath("/deals");
+  revalidatePath("/dashboard");
+  return deal;
+}
+
 // Tasks
 export async function createTask(data: {
   title: string;
@@ -151,9 +166,78 @@ export async function createEvent(data: {
   return event;
 }
 
+export async function updateEvent(id: string, data: Partial<{
+  title: string;
+  date: Date;
+  time: string;
+  duration: string;
+  type: string;
+  with: string;
+  company: string;
+}>) {
+  const event = await prisma.calendarEvent.update({
+    where: { id },
+    data: {
+      ...data,
+      type: data.type as any,
+    },
+  });
+  revalidatePath("/calendar");
+  return event;
+}
+
 export async function deleteEvent(id: string) {
   await prisma.calendarEvent.delete({ where: { id } });
   revalidatePath("/calendar");
+}
+
+// Campaigns
+export async function createCampaign(data: {
+  name: string;
+  type: string;
+  status: string;
+  sent?: number;
+  opened?: number;
+  clicked?: number;
+  converted?: number;
+  revenue?: number;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const campaign = await prisma.campaign.create({
+    data: {
+      ...data,
+      status: data.status as any,
+    },
+  });
+  revalidatePath("/campaigns");
+  return campaign;
+}
+
+export async function updateCampaign(id: string, data: Partial<{
+  name: string;
+  type: string;
+  status: string;
+  sent: number;
+  opened: number;
+  clicked: number;
+  converted: number;
+  revenue: number;
+}>) {
+  const campaign = await prisma.campaign.update({
+    where: { id },
+    data: {
+      ...data,
+      status: data.status as any,
+    },
+  });
+  revalidatePath("/campaigns");
+  return campaign;
+}
+
+export async function deleteCampaign(id: string) {
+  await prisma.campaign.delete({ where: { id } });
+  revalidatePath("/campaigns");
 }
 
 // User settings

@@ -91,6 +91,22 @@ export default async function DashboardPage() {
     avatar: deal.avatar || deal.contact.company.split(" ").map((w) => w[0]).join("").toUpperCase(),
   }));
 
+  const recentCustomers = await prisma.contact.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 5,
+    select: {
+      id: true,
+      name: true,
+      company: true,
+      email: true,
+      phone: true,
+      status: true,
+      revenue: true,
+      lastContact: true,
+      avatar: true,
+    },
+  });
+
   const pipeline = [
     { stage: "Lead", deals: 0, value: 0 },
     { stage: "Qualified", deals: 0, value: 0 },
@@ -128,8 +144,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500 mt-1">Welcome back, here&apos;s what&apos;s happening today.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Welcome back, here&apos;s what&apos;s happening today.</p>
       </div>
 
       <KpiCards kpis={kpis} />
@@ -161,7 +177,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <CustomersTable limit={5} />
+      <CustomersTable customers={recentCustomers} />
     </div>
   );
 }
