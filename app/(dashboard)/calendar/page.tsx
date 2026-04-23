@@ -42,9 +42,19 @@ export default function CalendarPage() {
   const [formData, setFormData] = useState({ title: "", time: "", duration: "1h", type: "meeting", with: "", company: "" });
 
   const fetchEvents = async () => {
-    const res = await fetch("/api/events");
-    const data = await res.json();
-    setEvents(data);
+    try {
+      const res = await fetch("/api/events");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setEvents(data);
+      } else {
+        setEvents([]);
+        toast.error(data.error || "Failed to load events");
+      }
+    } catch {
+      setEvents([]);
+      toast.error("Network error. Please retry.");
+    }
     setLoading(false);
   };
 

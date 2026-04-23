@@ -38,9 +38,19 @@ export default function CustomersPage() {
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", company: "", status: "Prospect" });
 
   const fetchCustomers = async () => {
-    const res = await fetch("/api/contacts");
-    const data = await res.json();
-    setCustomers(data);
+    try {
+      const res = await fetch("/api/contacts");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setCustomers(data);
+      } else {
+        setCustomers([]);
+        toast.error(data.error || "Failed to load customers");
+      }
+    } catch {
+      setCustomers([]);
+      toast.error("Network error. Please retry.");
+    }
     setLoading(false);
   };
 

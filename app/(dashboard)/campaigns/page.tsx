@@ -37,9 +37,19 @@ export default function CampaignsPage() {
   const [formData, setFormData] = useState({ name: "", type: "Email", status: "Draft", startDate: "", endDate: "" });
 
   const fetchCampaigns = async () => {
-    const res = await fetch("/api/campaigns");
-    const data = await res.json();
-    setCampaigns(data);
+    try {
+      const res = await fetch("/api/campaigns");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setCampaigns(data);
+      } else {
+        setCampaigns([]);
+        toast.error(data.error || "Failed to load campaigns");
+      }
+    } catch {
+      setCampaigns([]);
+      toast.error("Network error. Please retry.");
+    }
     setLoading(false);
   };
 

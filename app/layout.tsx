@@ -10,6 +10,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Nexus CRM",
   description: "Modern CRM Dashboard",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({
